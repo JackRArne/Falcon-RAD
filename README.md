@@ -1,2 +1,2 @@
 # Falcon-RAD
-USAFA x SPARC Dept. Falson-RAD Cube-SAT
+USAFA x SPARC Dept. Falcon-RAD Cube-SAT
