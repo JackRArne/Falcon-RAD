@@ -1,2 +1,12 @@
-# Falcon-RAD
+![image](https://github.com/JackRArne/Falcon-RAD/assets/32783514/e8a5d648-7c80-403d-ac03-fc619a552484)# Falcon-RAD
 USAFA x SPARC Dept. Falcon-RAD Cube-SAT
+
+1.	Introduction
+The Naval Academy Standard Bus (NASB) is a standard 1U CubeSat bus that attaches to a payload module. The payload module will be 2U and will carry two payloads and a dummy weight. The standardization of the NASB will allow for the United States Naval Academy (USNA) to consistently launch spacecraft with a reliable and tested payload bus making space more accessible for students at a low cost. USNA-16 is the first mission of the NASB. For USNA-16, the NASB and payload module will support two customer payloads, the FalconRAD designed by cadets from the United States Air Force Academy (USAFA) Space Physics and Atmospheric Research Center (SPARC) and one from University of Maryland (UMD) and the Students for the Exploration and Development of Space (SEDS). The USNA NASB payload team is responsible for the design of the payload module structure, and therefore this ICD contains requirements for both the interface between the payload module and the customer payloads, as well as the interface between the payload module and the NASB.
+
+1.2.	Purpose
+The purpose of this Interface Control Document (ICD) is to define requirements for the customer payload boards to ensure proper integration with the payload module. Upon formal approval for each customer payload, this ICD shall be incorporated into the requirements baseline for each system.
+
+1.3.	Scope
+The specific requirements that this ICD defines are physical, electrical, and software requirements. This ICD defines the interfaces between the NASB, the payload module, the payload interface board, and the customer payloads. For mechanical requirements, this ICD describes the concept of operations for interfaces, sets physical standards for the payload module, and identifies mounting hardware requirements. For electrical requirements, this ICD describes the concept of operations for the interfaces, establishes power allotments to the customer payloads, and sets connection standards. For software requirements, this ICD describes the concept of operations for the interfaces, defines message structures and protocols which govern the interchange of data, and identifies the hardware requirements for communication paths along which data are expected to flow.
+![image](https://github.com/JackRArne/Falcon-RAD/assets/32783514/6a6a3562-02e8-48b8-ade1-c907088fab41)
