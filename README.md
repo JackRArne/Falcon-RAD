@@ -1,4 +1,3 @@
-![image](https://github.com/JackRArne/Falcon-RAD/assets/32783514/e8a5d648-7c80-403d-ac03-fc619a552484)# Falcon-RAD
 USAFA x SPARC Dept. Falcon-RAD Cube-SAT
 
 1.	Introduction
@@ -9,4 +8,3 @@ The purpose of this Interface Control Document (ICD) is to define requirements f
 
 1.3.	Scope
 The specific requirements that this ICD defines are physical, electrical, and software requirements. This ICD defines the interfaces between the NASB, the payload module, the payload interface board, and the customer payloads. For mechanical requirements, this ICD describes the concept of operations for interfaces, sets physical standards for the payload module, and identifies mounting hardware requirements. For electrical requirements, this ICD describes the concept of operations for the interfaces, establishes power allotments to the customer payloads, and sets connection standards. For software requirements, this ICD describes the concept of operations for the interfaces, defines message structures and protocols which govern the interchange of data, and identifies the hardware requirements for communication paths along which data are expected to flow.
-![image](https://github.com/JackRArne/Falcon-RAD/assets/32783514/6a6a3562-02e8-48b8-ade1-c907088fab41)
