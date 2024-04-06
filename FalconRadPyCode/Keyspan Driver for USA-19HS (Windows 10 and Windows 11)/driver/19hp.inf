@@ -1,0 +1,67 @@
+;
+;       FILE:   19HP.INF
+;
+; Keyspan UFT Cable (USA19H)
+;
+; Serial Driver Installer (Win2k/xp/98/me/vista)
+;
+; 2001Apr05 DF -- WHQL mods
+; 2002mar21 LPM -- XP WHQL mods with co-installer
+; 2002apr26 LPM -- version 3.2
+;
+; Copyright (c) 2007 InnoSys Inc., All Rights Reserved
+;
+;
+
+[Version]
+Signature = "$CHICAGO$"
+Provider=%ProviderName%
+Class=PORTS
+ClassGuid={4D36E978-E325-11CE-BFC1-08002BE10318}
+DriverVer=05/13/2010,3.7.0.5
+CatalogFile.NT=USA19HP.cat
+
+[Manufacturer]
+%MfgName%=Keyspan,NTamd64
+
+[Keyspan.NTamd64]
+%USA19HPORT.DeviceDesc%=USA19HPORTX64.Install, KEYSPAN\*USA19HMAP
+
+[ControlFlags]
+ExcludeFromSelect=*             ; removes all device here from the device installer list
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;	AMD 64
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+[USA19HPORTX64.Install.NT]
+AddReg=USA19HPORTX64.NT.AddReg
+
+[USA19HPORTX64.Install.NT.Services]
+Include=MSPORTS.INF
+Needs=SerialEnumerator.NT.Services
+AddService = USA19HP, 0x00000002, USA19HPORTX64.AddService
+
+[USA19HPORTX64.Install.NT.HW]
+AddReg=USA19HPORTX64.NT.HW.AddReg
+
+[USA19HPORTX64.NT.AddReg]
+HKR,,PortSubClass,1,01
+;HKR,,EnumPropPages32,,"USA19HPropPage.dll,EnumPropPages"
+HKR,,EnumPropPages32,,"USA19HPropPage.dll,SerialPortPropPageProvider"
+
+[USA19HPORTX64.NT.HW.AddReg]
+HKR,,"UpperFilters",0x00010000,"serenum"
+
+[USA19HPORTX64.AddService]
+ServiceType    = 1                  ; SERVICE_KERNEL_DRIVER
+StartType      = 3                  ; SERVICE_DEMAND_START
+ErrorControl   = 1                  ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %12%\USA19Hx64p.SYS
+LoadOrderGroup = Extended Base
+
+[Strings]
+MfgName="Keyspan"
+ProviderName="KSPN"
+USA19HPORT.DeviceDesc="Keyspan USB Serial Port"
+USA19HPORT.SvcDesc="Keyspan USB Serial Port Driver"

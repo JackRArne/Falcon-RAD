@@ -1,0 +1,107 @@
+;
+;       FILE:   USA19H.INF
+;
+; Keyspan Serial Adapter (USA19H)
+;
+; USB Driver Installer for Win2K / Win98 / WinME / vista
+;
+;
+; Copyright (c) 2007 InnoSys Inc., All Rights Reserved
+;
+
+[Version]
+signature="$CHICAGO$"
+Class=USB
+ClassGuid={36fc9e60-c465-11cf-8056-444553540000}
+Provider=%Keyspan%
+DriverVer=05/13/2010,3.7.0.5
+CatalogFile.NT=USA19H.CAT
+
+[Manufacturer]
+%KeyspanMfg%=Keyspan,NTamd64
+
+[DestinationDirs]
+DefaultDestDir=12
+USA19HX64PRE.Copy.NT = 10,System32\Drivers
+USA19HX64.Copy.NT = 10,System32\Drivers
+USA19HX64.CoInstall.Copy.NT = 11
+
+[SourceDisksNames]
+1 = %DISK1%,KeyspanUSA19H,,
+
+[SourceDisksFiles]
+usa19h.sys = 1
+usa19h2k.sys = 1
+usa19h2kp.sys = 1
+usa19hp.vxd = 1
+usa19hPropPage.dll = 1
+k19hinst.dll = 1
+usa19hx64.sys = 1
+usa19hx64p.sys = 1
+
+[Keyspan.NTamd64]
+;
+;
+; This device is bound to the USA19H.sys driver.
+;
+%USB\VID_06cd&PID_0120.DeviceDesc%=USA19HPREX64, USB\VID_06cd&PID_0120
+%USB\VID_06cd&PID_0121.DeviceDesc%=USA19HX64, USB\VID_06cd&PID_0121
+
+
+[ControlFlags]
+ExcludeFromSelect=*             ; removes all device here from the device installer list
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;	AMD 64
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+[USA19HPREX64.NT]
+CopyFiles=USA19HPREX64.Copy.NT
+
+[USA19HPREX64.NT.CoInstallers]
+CopyFiles=USA19HX64.CoInstall.Copy.NT
+AddReg = USA19HX64.CoInstall.AddReg.NT
+
+[USA19HPREX64.NT.Services]
+AddService=USA19H,2,DriverServiceX64
+
+[USA19HPREX64.Copy.NT]
+USA19Hx64.sys,,,2
+
+[USA19HX64.NT]
+CopyFiles=USA19HX64.Copy.NT
+
+[USA19HX64.NT.CoInstallers]
+CopyFiles=USA19HX64.CoInstall.Copy.NT
+AddReg = USA19HX64.CoInstall.AddReg.NT
+
+[USA19HX64.CoInstall.Copy.NT]
+k19hinst.dll,,,0x00000010
+USA19HPropPage.dll,,,2
+
+[USA19HX64.Copy.NT]
+USA19Hx64.sys,,,2
+USA19Hx64p.sys,,,2
+
+[USA19HX64.NT.Services]
+AddService=USA19H,2,DriverServiceX64
+
+[DriverServiceX64]
+ServiceType=1
+StartType=3
+ErrorControl=1
+ServiceBinary=%12%\USA19Hx64.sys
+
+[USA19HX64.CoInstall.AddReg.NT]
+HKR,,CoInstallers32,0x00010000,"k19hinst.dll,_KusaCoInstaller@16"
+
+
+[Strings]
+DISK1="Keyspan USB Serial (KeyspanUSA19H)"
+Keyspan="KSPN"
+KeyspanMfg="Keyspan"
+USB\VID_06cd&PID_0120.DeviceDesc="Keyspan USB Serial Adapter Preloader"
+USB\VID_06cd&PID_0121.DeviceDesc="Keyspan USB Serial Adapter"
+
+AsstSetup_Desc="Keyspan Assistant Setup"
+
