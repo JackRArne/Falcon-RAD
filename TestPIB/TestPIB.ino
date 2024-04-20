@@ -37,7 +37,7 @@ void sendPacket() {
   Serial.print(F(":"));
   Serial.println(secs);
 
-  delay(1000); // Wait for 1 second
+  delay(500); // Wait for 1 second
 }
 
 
@@ -66,5 +66,5 @@ void loop() {
     receivePacket();
   }
 
-  delay(1000); // Main loop delay
+  delay(500); // Main loop delay
 }
