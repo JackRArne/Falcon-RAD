@@ -1,142 +1,253 @@
-const int numBytes = 9;  // Number of bytes to receive
-byte receivedBytes[numBytes]; // Array to store received bytes
-int receivedCount = 0; // Counter for received bytes
+  #include <Arduino.h>
+  #include <CRC32.h>
 
- 
-byte calccrcarray[numBytes-1];
-const int return_size = 19;
-byte returnpacket[return_size];
-#include "CRC.h"
-byte calcdcrc_return[1];
-bool crcflag = false;
-const int checksumbyte = 9;
-byte incom_crc_value[1];
-byte incom_calcd_crc[1];
- 
-int crc1 = 1;
-int crc2 = 1;
- 
-//Setup constants
-const int temp_sensor = A0;
-const int dos_1 = A1;
-const int dos_2 = A2;
-const int dos_3 = A3;
-const int dos_4 = A4;
- 
-int inputVal_1 = 0;
-int inputVal_2 = 0;
-int inputVal_3 = 0;
-int inputVal_4 = 0;
-int inputVal_5 = 0;
- 
-byte data[10];
- 
-void setup() {
-  Serial.begin(115200);
-  pinMode(LED_BUILTIN, OUTPUT); // Initialize the LED_BUILTIN pin as an output
+  // Constants
+  const int numBytes = 200;  // Adjust as needed depending on maximum expected message length
+  const int returnSize = 39; // Size of the return packet to include start, end, and checksum
 
+  // Constants for SAA boundaries
+  const float SAA_LAT_MIN = -50.0;
+  const float SAA_LAT_MAX = 0.0;
+  const float SAA_LON_MIN = -90.0;
+  const float SAA_LON_MAX = 40.0;
+
+  // Pin definitions
+  const int tempSensor = A0;
+  const int dos1 = A1;
+  const int dos2 = A2;
+  const int dos3 = A3;
+  const int dos4 = A4;
+
+  struct GPSData {
+    float time;
+    float latitude;
+    char latDirection;
+    float longitude;
+    char longDirection;
+    float altitude;
+  };  
+
+  struct saaPacket{
+    GPSData timeCode;
+    int saaData[5][10];
+  };
+
+  struct normPacket{
+    GPSData timeCode;
+    int saaData[5][2];
+  };
+
+  // Global variables
+  String receivedData; // Using String to hold received data until newline
+  byte returnPacket[returnSize];
+  bool crcFlag = false;
+  int inputVal1, inputVal2, inputVal3, inputVal4, inputVal5;
+
+
+  void setup() {
+    Serial1.begin(115200);
+    Serial.begin(115200); // Initialize the USB Serial communication
+    pinMode(LED_BUILTIN, OUTPUT); // Initialize the LED_BUILTIN pin as an output
+  }
+
+  void readBytes() {
+    if (Serial1.available()) {
+      receivedData = Serial1.readStringUntil('\n');
+      Serial.println("Received: " + receivedData);
+    }
+  }
+
+  void sendSaa(saaPacket value){
+    byte* b = (byte*)&value;
+    uint32_t calculatedCRC = CRC32::calculate(b, sizeof(saaPacket));
+    Serial1.write("\xFF\xFD\xFF");
+    Serial1.write("AFS");
+    Serial1.write(b, sizeof(saaPacket));
+    Serial1.write((byte*)&calculatedCRC, sizeof(uint32_t));
+    Serial1.write("\xFF\xFE\xFF");
+  } 
+  void sendNorm(normPacket value){
+    byte* b = (byte*)&value;
+    uint32_t calculatedCRC = CRC32::calculate(b, sizeof(normPacket));
+    Serial1.write("\xFF\xFD\xFF");
+    Serial1.write("AFN");
+    Serial1.write(b, sizeof(normPacket));
+    Serial1.write((byte*)&calculatedCRC, sizeof(uint32_t));
+    Serial1.write("\xFF\xFE\xFF");
+  } 
+        
+
+
+  String crcCheck() {
+    int asteriskIndex = receivedData.indexOf('*');
+    if (asteriskIndex > 0) {
+        String dataPart = receivedData.substring(2, asteriskIndex);
+        String checksumPart = receivedData.substring(asteriskIndex + 1);
+        checksumPart = checksumPart.substring(0, checksumPart.length() - 2);
+
+        // Create an array from the dataPart string
+        int dataLength = dataPart.length();
+        uint8_t *byteBuffer = new uint8_t[dataLength];
+        for (int i = 0; i < dataLength; i++) {
+            byteBuffer[i] = (uint8_t)dataPart.charAt(i);
+        }
+
+        // Calculate the CRC of the entire buffer
+        uint32_t calculatedCRC = CRC32::calculate(byteBuffer, dataLength);
+        delete[] byteBuffer;  // Free the allocated memory
+
+        // Convert the CRC-32 to a hex string
+        char buffer[10];
+        sprintf(buffer, "%08X", calculatedCRC);
+        String calculatedCRCStr = String(buffer);
+
+        Serial.print("Data: ");
+        Serial.print(dataPart);
+        Serial.print(", Calculated CRC: ");
+        Serial.print(calculatedCRCStr);
+        Serial.print(", Received CRC: ");
+        Serial.println(checksumPart);
+
+        // Compare the calculated and received CRC case-insensitively
+        crcFlag = calculatedCRCStr.equalsIgnoreCase(checksumPart);
+        return dataPart;
+    } else {
+        Serial.println("Invalid data or checksum not found");
+        crcFlag = false;
+    }
+    return "";
+  }
+
+
+
+  bool processData() {
+    if (!crcFlag) {
+      Serial.println("CRC check failed.");
+      return false;
+    } else {
+      Serial.println("CRC check passed.");
+      digitalWrite(LED_BUILTIN, HIGH);
+      delay(200);
+      digitalWrite(LED_BUILTIN, LOW);
+      return true;
+    }
+  }
+  
+  GPSData parseGPSData(String data) {
+      GPSData parsedData;
+      
+      char tempBuffer[100]; // Buffer to hold a copy of the input data
+
+      // Ensure the string is null-terminated
+      data.trim();
+      data.toCharArray(tempBuffer, sizeof(tempBuffer));
+      tempBuffer[sizeof(tempBuffer) - 1] = '\0';  // Safety null termination
+
+      // Debug print the raw data
+    
+
+      // Tokenize the string using strtok and commas as delimiters
+      char* token = strtok(tempBuffer, ",");
+      
+      // Extract time
+      if (token != NULL) {
+          parsedData.time = atof(token);
+          token = strtok(NULL, ",");
+      }
+
+      // Extract latitude
+      if (token != NULL) {
+          parsedData.latitude = atof(token);
+          token = strtok(NULL, ",");
+      }
+
+      // Extract latitude direction
+      if (token != NULL) {
+          parsedData.latDirection = token[0]; // Assuming the direction is a single character
+          token = strtok(NULL, ",");
+          if (parsedData.latDirection == 'S'){
+            parsedData.latitude = parsedData.latitude * -1;
+          }
+      }
+
+      // Extract longitude
+      if (token != NULL) {
+          parsedData.longitude = atof(token);
+          token = strtok(NULL, ",");
+      }
+
+      // Extract longitude direction
+      if (token != NULL) {
+          parsedData.longDirection = token[0]; // Assuming the direction is a single character
+          token = strtok(NULL, ",");
+          if (parsedData.longDirection == 'W'){
+            parsedData.longitude = parsedData.longitude * -1;
+          }
+      }
+
+      // Extract altitude
+      if (token != NULL) {
+          parsedData.altitude = atof(token);
+      }
+
+    
+
+      return parsedData;
+  }
+
+
+
+
+// Function to check if the current location is within the SAA
+bool isSAA(float latitude, float longitude) {
+  return latitude >= SAA_LAT_MIN && latitude <= SAA_LAT_MAX &&
+         longitude >= SAA_LON_MIN && longitude <= SAA_LON_MAX;
 }
- 
-void readbytes(){
-  if (receivedCount < numBytes) {
-    if (Serial.available() > 0) {
-      // Read the incoming byte and store it in the array
-      receivedBytes[receivedCount] = Serial.read();
-      receivedCount++;
+
+void saaGather(saaPacket *value) {
+  
+    for (int i = 0; i < 10; i++) {
+        value->saaData[0][i] = analogRead(tempSensor);
+        value->saaData[1][i] = analogRead(dos1);
+        value->saaData[2][i] = analogRead(dos2);
+        value->saaData[3][i] = analogRead(dos3);
+        value->saaData[4][i] = analogRead(dos4);
+        delay(1000); // One-second interval
+    }
+    // Send the gathered data
+}
+
+
+void normGather(normPacket* value) {
+
+    for (int i = 0; i < 2; i++) {
+        value->saaData[0][i] = analogRead(tempSensor);
+        value->saaData[1][i] = analogRead(dos1);
+        value->saaData[2][i] = analogRead(dos2);
+        value->saaData[3][i] = analogRead(dos3);
+        value->saaData[4][i] = analogRead(dos4);
+        delay(1000); // One-second interval
+    }
+    // Send the gathered data
+}
+
+void loop() {
+  readBytes();
+  if (receivedData.length() > 0) {
+    receivedData = crcCheck();
+    if (processData()) {
+      GPSData parsedGPSData = parseGPSData(receivedData);
+    
+      if (isSAA(parsedGPSData.latitude, parsedGPSData.longitude)) {
+        saaPacket saa;
+        saaGather(&saa);
+        sendSaa(saa);
+      } else {
+        normPacket norm;
+        normGather(&norm);
+        sendNorm(norm);
+      }
     }
   }
 }
-void crc_check(){
-  incom_crc_value[0] = receivedBytes[checksumbyte-1];
-  crc1 = int(incom_crc_value[0]);
-  calccrcarray[0] = receivedBytes[0];
-  calccrcarray[1] = receivedBytes[1];
-  calccrcarray[2] = receivedBytes[2];
-  calccrcarray[3] = receivedBytes[3];
-  calccrcarray[4] = receivedBytes[4];
-  calccrcarray[5] = receivedBytes[5];
-  calccrcarray[6] = receivedBytes[6];
-  calccrcarray[7] = receivedBytes[7];
-  //calccrcarray[8] = receivedBytes[8];
- 
-  incom_calcd_crc[0] = calcCRC8(calccrcarray,numBytes-1);
-  crc2 = int(incom_calcd_crc[0]);
-  if (crc1 == crc2){
-    crcflag = true;
-  }
-  else{
-    crcflag = false;
-  }
- 
-}
- 
- 
-void Gps_pull(){
-  for (int j = 0; j<8; j++){
-    returnpacket[j] = receivedBytes[j+1];
-  }
-}
- 
-void Data_pull(){
-  inputVal_1 = analogRead(temp_sensor);
-  inputVal_2 = analogRead(dos_1);
-  inputVal_3 = analogRead(dos_2);
-  inputVal_4 = analogRead(dos_3);
-  inputVal_5 = analogRead(dos_4);
-  data[0] = highByte(inputVal_1);
-  data[1] = lowByte(inputVal_1);
-  data[2] = highByte(inputVal_2);
-  data[3] = lowByte(inputVal_2);
-  data[4] = highByte(inputVal_3);
-  data[5] = lowByte(inputVal_3);
-  data[6] = highByte(inputVal_4);
-  data[7] = lowByte(inputVal_4);
-  data[8] = highByte(inputVal_5);
-  data[9] = lowByte(inputVal_5);
- // data[0] = highByte(0);
- // data[1] = lowByte(300);
- // data[2] = highByte(0);
- // data[3] = lowByte(0);
- // data[4] = highByte(0);
- // data[5] = lowByte(0);
- // data[6] = highByte(0);
-  //data[7] = lowByte(0);
- // data[8] = highByte(0);
- // data[9] = lowByte(0);
-  for (int k = 0, l = 0; (k<10) && (l<5+10); k++, l++){
-    returnpacket[8+l] = data[k];
-  }
-}
- 
-void finalcrc() {
-  calcdcrc_return[0] = calcCRC8(returnpacket, return_size - 1); // Calculate CRC for the packet minus the CRC byte itself
-  returnpacket[return_size - 1] = calcdcrc_return[0]; // Assign calculated CRC to the last byte of the return packet
-}
- 
-void loop() {
-  readbytes();
- 
-  if (receivedCount == numBytes) {
-    //crc_check();
-    if (crcflag == false) { // If CRC check is successful, then pull GPS and data
-      Gps_pull();
-      Data_pull();
-      finalcrc();
-      digitalWrite(LED_BUILTIN, HIGH); // Turn the LED on
-      delay(200);
-      digitalWrite(LED_BUILTIN, LOW);  // Turn the LED off
-        
-      for (int i = 0; i < return_size; i++) { // Send return packet including the CRC byte
-        Serial.write(returnpacket[i]);
-      }
-    }  
-    // Reset the counter to start receiving new bytes
-    receivedCount = 0;
-    crcflag = false;
-  }
- 
-  // Corrected this condition to prevent overflow
-  if (receivedCount >= numBytes) {
-    receivedCount = 0;
-  }
-}
+
