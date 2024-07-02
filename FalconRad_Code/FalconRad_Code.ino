@@ -1,4 +1,4 @@
-  #include <Arduino.h>
+ #include <Arduino.h>
   #include <CRC32.h>
 
   // Constants
@@ -6,10 +6,10 @@
   const int returnSize = 39; // Size of the return packet to include start, end, and checksum
 
   // Constants for SAA boundaries
-  const float SAA_LAT_MIN = -50.0;
-  const float SAA_LAT_MAX = 0.0;
-  const float SAA_LON_MIN = -90.0;
-  const float SAA_LON_MAX = 40.0;
+  const float SAA_LAT_MIN = -5000.0;
+  const float SAA_LAT_MAX = 0000.0;
+  const float SAA_LON_MIN = -9000.0;
+  const float SAA_LON_MAX = 4000.0;
 
   // Pin definitions
   const int tempSensor = A0;
@@ -65,7 +65,8 @@
     Serial1.write(b, sizeof(saaPacket));
     Serial1.write((byte*)&calculatedCRC, sizeof(uint32_t));
     Serial1.write("\xFF\xFE\xFF");
-  } 
+    Serial.write("sentSaa");
+  }
   void sendNorm(normPacket value){
     byte* b = (byte*)&value;
     uint32_t calculatedCRC = CRC32::calculate(b, sizeof(normPacket));
@@ -74,8 +75,9 @@
     Serial1.write(b, sizeof(normPacket));
     Serial1.write((byte*)&calculatedCRC, sizeof(uint32_t));
     Serial1.write("\xFF\xFE\xFF");
-  } 
-        
+    Serial.write("sentNorm");
+  }
+       
 
 
   String crcCheck() {
@@ -132,10 +134,10 @@
       return true;
     }
   }
-  
+ 
   GPSData parseGPSData(String data) {
       GPSData parsedData;
-      
+     
       char tempBuffer[100]; // Buffer to hold a copy of the input data
 
       // Ensure the string is null-terminated
@@ -144,11 +146,11 @@
       tempBuffer[sizeof(tempBuffer) - 1] = '\0';  // Safety null termination
 
       // Debug print the raw data
-    
+   
 
       // Tokenize the string using strtok and commas as delimiters
       char* token = strtok(tempBuffer, ",");
-      
+     
       // Extract time
       if (token != NULL) {
           parsedData.time = atof(token);
@@ -190,7 +192,7 @@
           parsedData.altitude = atof(token);
       }
 
-    
+   
 
       return parsedData;
   }
@@ -205,7 +207,7 @@ bool isSAA(float latitude, float longitude) {
 }
 
 void saaGather(saaPacket *value) {
-  
+ 
     for (int i = 0; i < 10; i++) {
         value->saaData[0][i] = analogRead(tempSensor);
         value->saaData[1][i] = analogRead(dos1);
@@ -237,17 +239,20 @@ void loop() {
     receivedData = crcCheck();
     if (processData()) {
       GPSData parsedGPSData = parseGPSData(receivedData);
-    
+   
       if (isSAA(parsedGPSData.latitude, parsedGPSData.longitude)) {
         saaPacket saa;
         saaGather(&saa);
+        saa.timeCode = parsedGPSData;
         sendSaa(saa);
+        return;
       } else {
         normPacket norm;
         normGather(&norm);
+        norm.timeCode = parsedGPSData;
         sendNorm(norm);
+        return;
       }
     }
   }
 }
-
